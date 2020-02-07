@@ -11,4 +11,4 @@ This is the initial version of Emergence detection extractor, to deploy it on Ne
   build the Cython modules for nms and the roi_pooling layer
   cd faster_rcnn_pytorch/faster_rcnn
   ./make.sh
-  Convert GPU process to CPU
+  Convert GPU process to CPU`
