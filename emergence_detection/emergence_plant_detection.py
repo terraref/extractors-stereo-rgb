@@ -212,7 +212,7 @@ def save_data_to_bety_form(emp_count, csv_dir, str_date, seasonNum, convt):
         
         str_time = str_date+'T12:00:00'
         traits['local_datetime'] = str_time
-        traits['emergence_counting'] = plot_count
+        traits['emergence_count'] = plot_count
         traits['site'] = parse_site_from_plotNum(plotNum, seasonNum, convt)
         trait_list = generate_traits_list_emp(traits)
         csv.write(','.join(map(str, trait_list)) + '\n')
@@ -232,7 +232,7 @@ def parse_site_from_plotNum(plotNum, seasonNum, convt):
 def get_traits_table_emp():
     
     fields = ('local_datetime', 'access_level', 'species', 'site',
-        'citation_author', 'citation_year', 'citation_title', 'method', 'emergence_counting')
+        'citation_author', 'citation_year', 'citation_title', 'method', 'emergence_count')
     
     traits = {'local_datetime' : '',
               'access_level' : '2',
@@ -241,8 +241,8 @@ def get_traits_table_emp():
               'citation_author': 'ZongyangLi',
               'citation_year' : '2020',
               'citation_title' : 'Maricopa Field Station Data and Metadata',
-              'method' : 'Stereo RGB data to emergence counting',
-              'emergence_counting' : []
+              'method' : 'Stereo RGB data to emergence count',
+              'emergence_count' : []
         }
     
     return (fields, traits)
@@ -257,7 +257,7 @@ def generate_traits_list_emp(traits):
                     traits['citation_year'],
                     traits['citation_title'],
                     traits['method'],
-                    traits['emergence_counting']
+                    traits['emergence_count']
                   ]
     
     return trait_list
