@@ -29,7 +29,7 @@ def get_traits_table():
               'citation_author': '"Zongyang, Li"',
               'citation_year': '2016',
               'citation_title': 'Maricopa Field Station Data and Metadata',
-              'method': 'Canopy Cover Estimation from Field Scanner RGB images'}
+              'method': 'Green Canopy Cover Estimation from Field Scanner RGB images'}
 
     return (fields, traits)
 
