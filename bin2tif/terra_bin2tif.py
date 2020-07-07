@@ -21,6 +21,10 @@ from terrautils.spatial import geojson_to_tuples, geojson_to_tuples_betydb
 import terraref.stereo_rgb
 
 
+
+
+
+
 class StereoBin2JpgTiff(TerrarefExtractor):
     def __init__(self):
         super(StereoBin2JpgTiff, self).__init__()
@@ -86,7 +90,7 @@ class StereoBin2JpgTiff(TerrarefExtractor):
         # Determine output directory
         self.log_info(resource, "Hierarchy: %s / %s / %s / %s / %s / %s / %s" % (season_name, experiment_name, self.sensors.get_display_name(),
                                                                                  timestamp[:4], timestamp[5:7], timestamp[8:10], timestamp))
-        target_dsid = build_dataset_hierarchy_crawl(host, secret_key, self.clowder_user, self.clowder_pass, self.clowderspace,
+        target_dsid = build_dataset_hierarchy_crawl(host, admin_key, self.clowder_user, self.clowder_pass, self.clowderspace,
                                               season_name, experiment_name, self.sensors.get_display_name(),
                                               timestamp[:4], timestamp[5:7], timestamp[8:10],
                                               leaf_ds_name=self.sensors.get_display_name() + ' - ' + timestamp)
@@ -95,16 +99,16 @@ class StereoBin2JpgTiff(TerrarefExtractor):
         uploaded_file_ids = []
 
         # Attach LemnaTec source metadata to Level_1 product if necessary
-        target_md = download_metadata(connector, host, secret_key, target_dsid)
+        target_md = download_metadata(connector, host, admin_key, target_dsid)
         if not get_extractor_metadata(target_md, self.extractor_info['name']):
             self.log_info(resource, "uploading LemnaTec metadata to ds [%s]" % target_dsid)
-            remove_metadata(connector, host, secret_key, target_dsid, self.extractor_info['name'])
+            remove_metadata(connector, host, admin_key, target_dsid, self.extractor_info['name'])
             terra_md_trim = get_terraref_metadata(all_dsmd)
             if updated_experiment is not None:
                 terra_md_trim['experiment_metadata'] = updated_experiment
             terra_md_trim['raw_data_source'] = host + ("" if host.endswith("/") else "/") + "datasets/" + resource['id']
             level1_md = build_metadata(host, self.extractor_info, target_dsid, terra_md_trim, 'dataset')
-            upload_metadata(connector, host, secret_key, target_dsid, level1_md)
+            upload_metadata(connector, host, admin_key, target_dsid, level1_md)
 
         try:
             left_shape = terraref.stereo_rgb.get_image_shape(terra_md_full, 'left')
@@ -125,7 +129,7 @@ class StereoBin2JpgTiff(TerrarefExtractor):
             self.created += 1
             self.bytes += os.path.getsize(left_tiff)
         # Check if the file should be uploaded, even if it was already created
-        found_in_dest = check_file_in_dataset(connector, host, secret_key, target_dsid, left_tiff)
+        found_in_dest = check_file_in_dataset(connector, host, admin_key, target_dsid, left_tiff)
         if not found_in_dest:
             self.log_info(resource, "uploading %s" % left_tiff)
             fileid = upload_to_dataset(connector, host, self.clowder_user, self.clowder_pass, target_dsid, left_tiff)
@@ -159,9 +163,9 @@ class StereoBin2JpgTiff(TerrarefExtractor):
                 "files_created": uploaded_file_ids
             }, 'dataset')
             self.log_info(resource, "uploading extractor metadata to raw dataset")
-            remove_metadata(connector, host, secret_key, resource['id'], self.extractor_info['name'])
+            remove_metadata(connector, host, admin_key, resource['id'], self.extractor_info['name'])
             try:
-                upload_metadata(connector, host, secret_key, resource['id'], extractor_md)
+                upload_metadata(connector, host, admin_key, resource['id'], extractor_md)
             except:
                 self.log_info(resource, "problem uploading extractor metadata...")
 

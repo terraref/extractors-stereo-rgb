@@ -6,7 +6,7 @@ from PIL import Image
 from skimage import morphology
 
 from pyclowder.utils import CheckMessage
-from pyclowder.datasets import download_metadata, upload_metadata, remove_metadata
+from pyclowder.datasets import download_metadata, upload_metadata, remove_metadata, submit_extraction
 from terrautils.metadata import get_extractor_metadata, get_terraref_metadata, \
     get_season_and_experiment
 from terrautils.extractors import TerrarefExtractor, is_latest_file, check_file_in_dataset, load_json_file, \
@@ -193,11 +193,11 @@ def gen_cc_enhanced(input_path, kernelSize=3, quality_score=None):
     # aveValue is average pixel value of grayscale image, if aveValue lower than 30 or higher than 195, return
     # quality_score is a score from Multiscale Autocorrelation (MAC), if quality_score lower than 13, return
 
-    aveValue = check_brightness(img)
+    #aveValue = check_brightness(img)
     #if not quality_score:
     #    quality_score = getImageQuality(input_path)
-    if low_rate > 0.1 or aveValue < 30 or aveValue > 195:
-        return None, None, None
+    #if low_rate > 0.1 or aveValue < 30 or aveValue > 195:
+    #    return None, None
 
     # saturated image process
     # over_rate is percentage of high value pixels(higher than SATUTATE_THRESHOLD) in the grayscale image, if over_rate > 0.15, try to fix it use gen_saturated_mask()
@@ -245,6 +245,19 @@ class rgbEnhancementExtractor(TerrarefExtractor):
         # Check for a left and right TIF file - skip if not found
         if not contains_required_files(resource, ['_left.tif', '_right.tif']):
             self.log_skip(resource, "missing required files")
+            # try to resubmit raw dataset
+            md = download_metadata(connector, host, secret_key, resource['id'])
+            b2t = get_extractor_metadata(md, 'terra.stereo-rgb.bin2tif', '1.4')
+            if b2t is None:
+                b2t = get_extractor_metadata(md, 'terra.stereo-rgb.bin2tif', '1.0')
+            # TODO: if metadata is missing entirely, we can't find raw source. add hooks to find via API
+            if b2t is not None and 'raw_data_source' in b2t:
+                raw_id = b2t['raw_data_source'].split('/')[-1]
+                self.log_info(resource, "retriggering bin2tif extractor on raw dataset")
+                submit_extraction(connector, host, secret_key, raw_id, "terra.stereo-rgb.bin2tif")
+            else:
+                self.log_info(resource, "raw dataset not found in: "+str(b2t.keys()))
+
             return CheckMessage.ignore
 
         # Check metadata to verify we have what we need
@@ -262,7 +275,8 @@ class rgbEnhancementExtractor(TerrarefExtractor):
             # Have TERRA-REF metadata, but not any from this extractor
             return CheckMessage.download
         else:
-            self.log_skip(resource, "no terraref metadata found")
+            self.log_error(resource, "no terraref metadata found; sending to cleaner")
+            submit_extraction(connector, host, secret_key, resource['id'], "terra.metadata.cleaner")
             return CheckMessage.ignore
 
     def process_message(self, connector, host, secret_key, resource, parameters):
